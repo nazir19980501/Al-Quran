@@ -16,7 +16,7 @@ LANGUAGES = {
 }
 
 class Command(BaseCommand):
-    help = "Import Uthmani Arabic Quran and available translations from AlQuran Cloud."
+    help = "Import Uthmani Arabic Quran, section metadata, and available translations."
 
     def add_arguments(self, parser):
         parser.add_argument("--languages", default="en,fa,ur,ps,tr,fr,id,de")
@@ -35,7 +35,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **opts):
-        self.stdout.write("Downloading original Uthmani Quran text...")
+        self.stdout.write("Downloading Uthmani Arabic text and Juz/Hizb/page metadata...")
         arabic = self.get_json("quran/quran-uthmani")
         for item in arabic["surahs"]:
             surah, _ = Surah.objects.update_or_create(
@@ -43,26 +43,33 @@ class Command(BaseCommand):
                 defaults={
                     "name_arabic": item["name"],
                     "name_english": item.get("englishName", item["name"]),
-                    "english_meaning": item.get(
-                        "englishNameTranslation", ""
-                    ),
+                    "english_meaning": item.get("englishNameTranslation", ""),
                     "revelation_type": item.get("revelationType", ""),
                     "total_verses": len(item["ayahs"]),
                 },
             )
             for verse in item["ayahs"]:
+                quarter = verse.get("hizbQuarter")
                 Ayah.objects.update_or_create(
                     global_number=verse["number"],
-                    defaults={"surah": surah, "verse_number": verse["numberInSurah"], "arabic_text": verse["text"]},
+                    defaults={
+                        "surah": surah,
+                        "verse_number": verse["numberInSurah"],
+                        "arabic_text": verse["text"],
+                        "juz_number": verse.get("juz"),
+                        "hizb_number": ((quarter + 3) // 4) if quarter else None,
+                        "page_number": verse.get("page"),
+                    },
                 )
-        self.stdout.write(self.style.SUCCESS(f"Imported {Ayah.objects.count()} Arabic verses."))
-
+        self.stdout.write(self.style.SUCCESS(
+            f"Imported {Surah.objects.count()} Surahs and {Ayah.objects.count()} Ayahs."
+        ))
         if opts["arabic_only"]:
             return
 
         for code in [x.strip().lower() for x in opts["languages"].split(",") if x.strip()]:
             if code not in LANGUAGES:
-                self.stdout.write(self.style.WARNING(f"Skipping unsupported configured language code: {code}"))
+                self.stdout.write(self.style.WARNING(f"Skipping unsupported language code: {code}"))
                 continue
             name, native, rtl = LANGUAGES[code]
             self.stdout.write(f"Looking for an available {name} translation...")
@@ -70,11 +77,11 @@ class Command(BaseCommand):
             if not editions:
                 self.stdout.write(self.style.WARNING(f"No translation editions found for {code}; skipped."))
                 continue
-            # Use first listed translation; user can choose another edition in Django admin.
             edition_data = editions[0]
             identifier = edition_data["identifier"]
             language, _ = Language.objects.update_or_create(
-                code=code, defaults={"name": name, "native_name": native, "is_rtl": rtl, "is_active": True}
+                code=code,
+                defaults={"name": name, "native_name": native, "is_rtl": rtl, "is_active": True},
             )
             edition, _ = TranslationEdition.objects.update_or_create(
                 identifier=identifier,
@@ -86,17 +93,17 @@ class Command(BaseCommand):
                     "is_default": True,
                 },
             )
-            edition_data_full = self.get_json(f"quran/{identifier}")
+            translated = self.get_json(f"quran/{identifier}")
             count = 0
-            for surah_data in edition_data_full["surahs"]:
+            for surah_data in translated["surahs"]:
                 for verse in surah_data["ayahs"]:
                     ayah = Ayah.objects.filter(global_number=verse["number"]).first()
                     if ayah:
                         AyahTranslation.objects.update_or_create(
-                            ayah=ayah, edition=edition,
-                            defaults={"text": verse["text"]},
+                            ayah=ayah, edition=edition, defaults={"text": verse["text"]}
                         )
                         count += 1
             self.stdout.write(self.style.SUCCESS(f"{identifier}: imported {count} translation verses."))
-
-        self.stdout.write(self.style.SUCCESS("Import complete. Check translation licences and verify Dari wording before publishing."))
+        self.stdout.write(self.style.SUCCESS(
+            "Import complete. Verify translation attribution/licences and confirm Persian vs Dari wording."
+        ))

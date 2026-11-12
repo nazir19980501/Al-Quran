@@ -2,23 +2,24 @@
 {% block title %}{{ surah.name_english }} — Al-Quran{% endblock %}
 {% block content %}
 <div class="mb-7 flex flex-wrap items-end justify-between gap-4">
-  <div><a href="{% url 'surah_list' %}" class="text-xs font-bold text-emerald-800 hover:underline">← All Surahs</a><h1 class="mt-2 text-3xl font-bold">{{ surah.name_english }}</h1><p class="mt-1 text-sm text-stone-500">{{ surah.english_meaning }} · {{ surah.revelation_type }} · {{ surah.total_verses }} verses</p></div>
-  <div class="flex items-center gap-2"><span class="text-xs text-stone-500">Translation</span><select onchange="location.href='?lang='+this.value" class="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm">{% for item in languages %}<option value="{{ item.code }}" {% if language and item.code == language.code %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+<div><a href="{% url 'surah_list' %}" class="text-xs font-bold text-emerald-800 hover:underline">← All Surahs</a><h1 class="mt-2 text-3xl font-bold">{{ surah.name_english }}</h1><p class="mt-1 text-sm text-stone-500">{{ surah.english_meaning }} · {{ surah.revelation_type }} · {{ surah.total_verses }} verses</p></div>
+<div class="flex flex-wrap items-center gap-2"><span class="text-xs text-stone-500">Translation</span><select onchange="location.href='?lang='+this.value" class="rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm">{% for item in languages %}<option value="{{ item.code }}" {% if language and item.code == language.code %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select><button type="button" id="play-surah" class="rounded-xl bg-emerald-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-800">▶ Play full Surah</button></div>
+</div>
+<div class="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white p-3">
+<span class="mr-1 text-xs font-bold text-stone-500">Jump to</span>
+<form class="flex items-center gap-1" onsubmit="location.href='/browse/juz/'+this.elements.n.value+'/';return false;"><label class="sr-only" for="juz-number">Juz</label><select id="juz-number" name="n" class="rounded-lg border border-stone-300 px-2 py-2 text-xs">{% for n in juz_numbers %}<option value="{{ n }}">Juz {{ n }}</option>{% endfor %}</select><button class="rounded-lg bg-stone-100 px-3 py-2 text-xs font-bold">Go</button></form>
+<form class="flex items-center gap-1" onsubmit="location.href='/browse/hizb/'+this.elements.n.value+'/';return false;"><label class="sr-only" for="hizb-number">Hizb</label><select id="hizb-number" name="n" class="rounded-lg border border-stone-300 px-2 py-2 text-xs">{% for n in hizb_numbers %}<option value="{{ n }}">Hizb {{ n }}</option>{% endfor %}</select><button class="rounded-lg bg-stone-100 px-3 py-2 text-xs font-bold">Go</button></form>
+<form class="flex items-center gap-1" onsubmit="location.href='/browse/page/'+this.elements.n.value+'/';return false;"><label class="sr-only" for="page-number">Page</label><select id="page-number" name="n" class="rounded-lg border border-stone-300 px-2 py-2 text-xs">{% for n in page_numbers %}<option value="{{ n }}">Page {{ n }}</option>{% endfor %}</select><button class="rounded-lg bg-stone-100 px-3 py-2 text-xs font-bold">Go</button></form>
 </div>
 <div class="mb-6 rounded-3xl bg-emerald-950 px-5 py-8 text-center text-white"><p class="quran-arabic text-4xl">{{ surah.name_arabic }}</p><p class="mt-3 text-xs text-emerald-200">{{ surah.name_english }} · {{ surah.total_verses }} verses</p></div>
 <div class="space-y-4">
-{% for ayah in ayahs %}
-<article id="ayah-{{ ayah.id }}" class="rounded-2xl border border-stone-200 bg-white p-5 sm:p-7">
-  <div class="mb-5 flex items-center justify-between"><span class="rounded-lg bg-stone-100 px-3 py-1.5 text-xs font-bold text-stone-600">{{ surah.number }} : {{ ayah.verse_number }}</span>
-  {% if user.is_authenticated %}<form method="post" action="{% url 'toggle_bookmark' ayah.id %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'reader' surah.number %}?lang={{ language.code }}#ayah-{{ ayah.id }}"><button aria-label="Bookmark verse" class="rounded-lg px-3 py-1.5 text-sm {% if ayah.id in saved_ids %}bg-amber-100 text-amber-900{% else %}bg-stone-100 text-stone-600{% endif %}">{% if ayah.id in saved_ids %}★ Saved{% else %}☆ Save{% endif %}</button></form>{% else %}<a href="{% url 'login' %}" class="text-xs font-semibold text-emerald-800">Sign in to save</a>{% endif %}
-  </div>
-  <p class="quran-arabic text-right text-3xl leading-[2.1] text-emerald-950 sm:text-4xl" lang="ar" dir="rtl" translate="no">{{ ayah.arabic_text }}</p>
-  {% with translation=ayah.translations.all %}
-    {% for item in translation %}{% if language and item.edition.language_id == language.id %}
-      <div class="mt-6 border-t border-stone-100 pt-5"><p class="mb-2 text-[10px] font-bold uppercase tracking-[.18em] text-stone-400">{{ item.edition.translator }}</p><p class="text-base leading-8 text-slate-700 {% if language.is_rtl %}text-right{% endif %}" {% if language.is_rtl %}dir="rtl"{% endif %}>{{ item.text }}</p></div>
-    {% endif %}{% endfor %}
-  {% endwith %}
-</article>
-{% empty %}<p>No verses imported for this Surah.</p>{% endfor %}
+{% for ayah in ayahs %}<article id="ayah-{{ ayah.id }}" class="rounded-2xl border border-stone-200 bg-white p-5 sm:p-7">
+<div class="mb-5 flex flex-wrap items-center justify-between gap-2"><span class="rounded-lg bg-stone-100 px-3 py-1.5 text-xs font-bold text-stone-600">{{ surah.number }} : {{ ayah.verse_number }}</span><div class="flex items-center gap-2"><span class="text-[10px] text-stone-400">{% if ayah.juz_number %}Juz {{ ayah.juz_number }}{% endif %}{% if ayah.hizb_number %} · Hizb {{ ayah.hizb_number }}{% endif %}{% if ayah.page_number %} · Page {{ ayah.page_number }}{% endif %}</span><button type="button" class="verse-play rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-900 hover:bg-emerald-100" data-global-ayah="{{ ayah.global_number }}" data-surah="{{ surah.number }}" data-verse="{{ ayah.verse_number }}">▶ Listen</button>
+{% if user.is_authenticated %}<form method="post" action="{% url 'toggle_bookmark' ayah.id %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'reader' surah.number %}?lang={{ language.code }}#ayah-{{ ayah.id }}"><button aria-label="Bookmark verse" class="rounded-lg px-3 py-1.5 text-sm {% if ayah.id in saved_ids %}bg-amber-100 text-amber-900{% else %}bg-stone-100 text-stone-600{% endif %}">{% if ayah.id in saved_ids %}★ Saved{% else %}☆ Save{% endif %}</button></form>{% else %}<a href="{% url 'login' %}" class="text-xs font-semibold text-emerald-800">Sign in to save</a>{% endif %}</div></div>
+<p class="quran-arabic text-right text-3xl leading-[2.1] text-emerald-950 sm:text-4xl" lang="ar" dir="rtl" translate="no">{{ ayah.arabic_text }}</p>
+{% for item in ayah.translations.all %}{% if language and item.edition.language_id == language.id %}<div class="mt-6 border-t border-stone-100 pt-5"><p class="mb-2 text-[10px] font-bold uppercase tracking-[.18em] text-stone-400">{{ item.edition.translator }}</p><p class="text-base leading-8 text-slate-700 {% if language.is_rtl %}text-right{% endif %}" {% if language.is_rtl %}dir="rtl"{% endif %}>{{ item.text }}</p></div>{% endif %}{% endfor %}
+</article>{% empty %}<p>No verses imported for this Surah.</p>{% endfor %}
 </div>
+{{ audio_playlist|json_script:"quran-audio-playlist" }}
 {% endblock %}
+{% block extra_scripts %}<script>window.QURAN_PLAYLIST = JSON.parse(document.getElementById("quran-audio-playlist").textContent);</script>{% endblock %}

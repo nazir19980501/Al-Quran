@@ -8,22 +8,22 @@ class Surah(models.Model):
     english_meaning = models.CharField(max_length=160, blank=True)
     revelation_type = models.CharField(max_length=20, blank=True)
     total_verses = models.PositiveSmallIntegerField(default=0)
-
     class Meta:
         ordering = ["number"]
-
     def __str__(self):
         return f"{self.number}. {self.name_english}"
 
 class Ayah(models.Model):
     surah = models.ForeignKey(Surah, on_delete=models.CASCADE, related_name="ayahs")
     verse_number = models.PositiveSmallIntegerField()
-    global_number = models.PositiveIntegerField(unique=True)
+    global_number = models.PositiveIntegerField(unique=True, db_index=True)
     arabic_text = models.TextField()
+    juz_number = models.PositiveSmallIntegerField(null=True, blank=True, db_index=True)
+    hizb_number = models.PositiveSmallIntegerField(null=True, blank=True, db_index=True)
+    page_number = models.PositiveSmallIntegerField(null=True, blank=True, db_index=True)
     class Meta:
         ordering = ["surah__number", "verse_number"]
         constraints = [models.UniqueConstraint(fields=["surah", "verse_number"], name="unique_ayah_in_surah")]
-
     def __str__(self):
         return f"{self.surah.number}:{self.verse_number}"
 

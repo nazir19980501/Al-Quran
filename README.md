@@ -1,112 +1,43 @@
 # Al-Quran — Django Quran Reader
 
-A responsive Django starter project with Surah browsing, Arabic Quran text, translation editions, daily Ayah, user registration, and personal bookmarks.
+Responsive Django Quran website with Uthmani Arabic text, translations, daily Ayah, search, personal bookmarks, Juz/Hizb/page navigation, and an audio recitation player.
 
-## Included
+## Features
+- Browse all 114 Surahs and read Arabic Quran text with translation editions
+- Daily Ayah selected consistently by local date
+- Search Arabic and selected translation
+- Registration, login, and personal bookmarks
+- Audio player: multiple reciters, individual Ayah, full Surah, previous/next verse
+- Juz (30), Hizb (60), and Madani Mushaf page (604) metadata and navigation
+- Django admin for Quran content, translations, and languages
+- Responsive layout and custom SVG favicon
+- SQLite by default; optional PostgreSQL
 
-- Responsive Tailwind-based layout for desktop, tablet, and mobile
-- 114 Surah / Ayah database structure
-- Arabic Uthmani text import
-- Multiple translation editions and languages
-- Language selector on the home page and reader
-- Daily Ayah chosen deterministically from the date
-- User registration, login, logout, and bookmarks
-- Search in Arabic and the selected translation (database search)
-- Django admin for managing Quran content and editions
-- SQLite by default; optional PostgreSQL configuration
-
-## 1. Requirements
-
-- Python 3.10+
-- Internet connection for the initial Quran data import
-- PostgreSQL is optional; SQLite is easiest for development
-
-## 2. Install on Windows
-
-Open PowerShell in this folder:
-
+## Windows setup
 ```powershell
 python -m venv venv
 venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 Copy-Item .env.example .env
-python manage.py makemigrations quran
 python manage.py migrate
 python manage.py createsuperuser
-```
-
-If PowerShell blocks activation, run:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-venv\Scripts\Activate.ps1
-```
-
-## 3. Import Quran text and available translations
-
-```powershell
-python manage.py import_quran
-```
-
-The command imports the original Uthmani Arabic text and tries to find translation editions for English, Persian, Urdu, Pashto, Turkish, French, Indonesian, and German through AlQuran Cloud's edition catalogue.
-
-You can choose languages:
-
-```powershell
-python manage.py import_quran --languages en,fa,ur,fr,tr
-```
-
-Arabic only:
-
-```powershell
-python manage.py import_quran --arabic-only
-```
-
-**Important:** API availability varies. A language may have no edition in the source catalogue, so it will be skipped. Persian (`fa`) is not automatically guaranteed to be a Dari translation. Before presenting it as Dari, verify the translator, vocabulary, source, and licence. Add a dedicated Dari edition only after confirming it is genuinely Dari.
-
-The importer currently selects the first available translation edition for each language. Review each edition in Django admin and check its attribution and redistribution terms before publishing the site. API access and content terms can change.
-
-## 4. Run the website
-
-```powershell
 python manage.py runserver
 ```
-
 Open http://127.0.0.1:8000/
 
-Admin: http://127.0.0.1:8000/admin/
-
-## 5. PostgreSQL (optional)
-
-Create a database, then update `.env`:
-
-```env
-DB_ENGINE=postgres
-DB_NAME=quran_db
-DB_USER=postgres
-DB_PASSWORD=your-password
-DB_HOST=127.0.0.1
-DB_PORT=5432
+## Quran data
+The existing database is intentionally retained. Run the importer to refresh Uthmani Arabic text and populate Juz, Hizb, and page metadata:
+```powershell
+python manage.py migrate
+python manage.py import_quran
 ```
+Arabic only: `python manage.py import_quran --arabic-only`
+Choose languages: `python manage.py import_quran --languages en,fa,ur,ps,tr,fr,id,de`
 
-Set `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=False`, and `DJANGO_ALLOWED_HOSTS` appropriately for production. Do not commit `.env` or expose secrets.
+AlQuran Cloud is used as an import source. API availability does not itself grant permission to redistribute every translation. Verify the translator, attribution, and licence terms before publication. Persian (fa) is not automatically Dari; verify the edition before labelling it Dari.
 
-## Quran content and attribution
+## Audio
+Audio is delivered by the Islamic Network CDN. The player includes Alafasy, Sudais, Husary, Minshawi, and Maher Al-Muaiqly. Internet access is required. Confirm current provider availability and terms before production use.
 
-This starter uses AlQuran Cloud's public API as a data source. Review its current API terms and each individual translation's copyright/licence and attribution requirements. Public API availability does not itself grant permission to redistribute every translation. The original Arabic text is rendered as supplied and is marked `translate="no"` in the UI. Verify imported verse counts and content before launch.
-
-For production-scale Quran content, consider Quran Foundation's official Content API. It requires server-side credentials and approved scopes; never place a client secret in frontend code. See:
-- https://api-docs.quran.com/docs/quickstart/
-- https://api-docs.quran.com/docs/api-reference/
-- https://alquran.cloud/api
-
-## Notes / next development steps
-
-This is a working starter, not a fully audited production deployment. Before public launch:
-- Verify all 6,236 ayahs and each imported translation against trusted editions.
-- Review permissions, translator attribution, and licensing.
-- Add pagination to the reader for performance on long Surahs.
-- Improve search with PostgreSQL full-text search and Arabic normalization that does not alter displayed Quran text.
-- Add audio recitation with an explicitly licensed audio source.
-- Add automated tests, rate limiting, backups, HTTPS, secure cookies, and production static-file serving.
-- Add dedicated Dari edition metadata instead of assuming Persian is Dari.
+## Production checklist
+Set a strong DJANGO_SECRET_KEY, DEBUG=False, and ALLOWED_HOSTS; use HTTPS, secure cookies, database backups, and PostgreSQL for a production deployment. Verify Quran text and translation data before public launch. The SQLite database is intentionally preserved in Git because it contains the Quran dataset.
