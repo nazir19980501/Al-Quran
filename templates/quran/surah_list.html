@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}All Surahs — Al-Quran{% endblock %}
+{% block content %}
+<div class="mb-8"><p class="text-xs font-bold uppercase tracking-[.2em] text-emerald-800">The Quran</p><h1 class="mt-2 text-3xl font-bold">All Surahs</h1><p class="mt-2 text-sm text-stone-500">Browse the 114 chapters of the Holy Quran.</p></div>
+<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+{% for surah in surahs %}
+<a href="{% url 'reader' surah.number %}" class="flex items-center gap-4 rounded-2xl border border-stone-200 bg-white p-4 hover:border-emerald-300 hover:shadow-sm">
+<span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-50 font-bold text-emerald-900">{{ surah.number }}</span>
+<span class="min-w-0 flex-1"><strong class="block">{{ surah.name_english }}</strong><span class="text-xs text-stone-500">{{ surah.english_meaning }} · {{ surah.total_verses }} verses</span></span>
+<span class="quran-arabic text-xl text-emerald-900">{{ surah.name_arabic }}</span>
+</a>
+{% empty %}<p>No Surahs imported yet.</p>{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Search Quran — Al-Quran{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-3xl"><p class="text-xs font-bold uppercase tracking-[.2em] text-emerald-800">Explore the text</p><h1 class="mt-2 text-3xl font-bold">Search the Quran</h1>
+<form method="get" class="mt-6 flex gap-2"><input type="text" name="q" value="{{ query }}" placeholder="Search Arabic or selected translation..." class="min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-4 py-3 outline-none focus:border-emerald-700"><input type="hidden" name="lang" value="{{ language.code }}"><button class="rounded-xl bg-emerald-900 px-5 py-3 text-sm font-bold text-white">Search</button></form>
+{% if query %}<p class="mt-6 text-sm text-stone-500">Results for “{{ query }}”</p><div class="mt-4 space-y-3">{% for ayah in results %}<a href="{% url 'reader' ayah.surah.number %}#ayah-{{ ayah.id }}" class="block rounded-2xl border border-stone-200 bg-white p-5 hover:border-emerald-300"><p class="text-xs font-bold text-emerald-800">{{ ayah.surah.name_english }} · {{ ayah.surah.number }}:{{ ayah.verse_number }}</p><p class="quran-arabic mt-3 text-right text-2xl leading-relaxed" dir="rtl">{{ ayah.arabic_text }}</p></a>{% empty %}<p class="rounded-xl bg-white p-5 text-sm text-stone-500">No matching verses found in the imported text.</p>{% endfor %}</div>{% endif %}</div>
+{% endblock %}
