@@ -7,10 +7,18 @@
   const reciter = document.getElementById("reciter-select");
   const prev = document.getElementById("player-prev");
   const next = document.getElementById("player-next");
+  const icons = {
+    play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 12 7-12 7z" fill="currentColor" stroke="none"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h3v14H8zM15 5h3v14h-3z" fill="currentColor" stroke="none"/></svg>'
+  };
   let playlist = [];
   let index = 0;
   let playing = false;
 
+  function setPlayIcon(isPlaying) {
+    toggle.innerHTML = isPlaying ? icons.pause : icons.play;
+    toggle.setAttribute("aria-label", isPlaying ? "Pause audio" : "Play audio");
+  }
   function audioUrl(item) {
     return "https://cdn.islamic.network/quran/audio/128/" + encodeURIComponent(reciter.value) + "/" + item.global + ".mp3";
   }
@@ -21,8 +29,8 @@
     title.textContent = "Surah " + item.surah + " · Ayah " + item.verse;
     status.textContent = "Reciter: " + reciter.options[reciter.selectedIndex].text;
     if (autoplay) {
-      audio.play().then(() => { playing = true; toggle.textContent = "Ⅱ"; })
-        .catch(() => { playing = false; toggle.textContent = "▶"; status.textContent = "Audio could not start. Check your connection and try again."; });
+      audio.play().then(() => { playing = true; setPlayIcon(true); })
+        .catch(() => { playing = false; setPlayIcon(false); status.textContent = "Audio could not start. Check your connection and try again."; });
     }
   }
   function start(items, startIndex) {
@@ -47,11 +55,11 @@
     if (audio.paused) audio.play().catch(() => {});
     else audio.pause();
   });
-  audio.addEventListener("play", () => { playing = true; toggle.textContent = "Ⅱ"; });
-  audio.addEventListener("pause", () => { playing = false; toggle.textContent = "▶"; });
+  audio.addEventListener("play", () => { playing = true; setPlayIcon(true); });
+  audio.addEventListener("pause", () => { playing = false; setPlayIcon(false); });
   audio.addEventListener("ended", () => {
     if (index < playlist.length - 1) { index += 1; loadCurrent(true); }
-    else { playing = false; toggle.textContent = "▶"; status.textContent = "Finished."; }
+    else { playing = false; setPlayIcon(false); status.textContent = "Finished."; }
   });
   prev.addEventListener("click", () => { if (playlist.length && index > 0) { index -= 1; loadCurrent(true); } });
   next.addEventListener("click", () => { if (playlist.length && index < playlist.length - 1) { index += 1; loadCurrent(true); } });
