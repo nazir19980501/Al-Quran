@@ -105,10 +105,11 @@ def toggle_bookmark(request, ayah_id):
         messages.success(request, "Verse saved to your bookmarks.")
     return redirect(request.POST.get("next") or "home")
 
-@login_required
 def bookmarks(request):
     language = selected_language(request)
-    saved = Bookmark.objects.filter(user=request.user).select_related("ayah__surah").prefetch_related("ayah__translations__edition__language")
+    raw_ids = request.GET.get("ids", "")
+    ayah_ids = [int(value) for value in raw_ids.split(",") if value.strip().isdigit()][:500]
+    saved = Ayah.objects.filter(id__in=ayah_ids).select_related("surah").prefetch_related("translations__edition__language")
     context = common_context(request, language)
     context["saved"] = saved
     return render(request, "quran/bookmarks.html", context)
