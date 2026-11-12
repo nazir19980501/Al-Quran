@@ -1,6 +1,40 @@
 {% extends "base.html" %}
-{% block title %}My Bookmarks — Al-Quran{% endblock %}
+{% block title %}Bookmarks — Al-Quran{% endblock %}
 {% block content %}
-<div class="mb-7"><p class="text-xs font-bold uppercase tracking-[.2em] text-emerald-800">Your collection</p><h1 class="mt-2 text-3xl font-bold">My bookmarks</h1><p class="mt-2 text-sm text-stone-500">Verses you have saved for later reflection.</p></div>
-<div class="space-y-4">{% for item in saved %}<article class="rounded-2xl border border-stone-200 bg-white p-5 sm:p-7"><div class="flex items-center justify-between"><a class="text-xs font-bold text-emerald-800" href="{% url 'reader' item.ayah.surah.number %}#ayah-{{ item.ayah.id }}">{{ item.ayah.surah.name_english }} · {{ item.ayah.surah.number }}:{{ item.ayah.verse_number }}</a><form method="post" action="{% url 'toggle_bookmark' item.ayah.id %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'bookmarks' %}"><button class="text-xs font-semibold text-rose-700">Remove</button></form></div><p class="quran-arabic mt-5 text-right text-3xl leading-relaxed" dir="rtl">{{ item.ayah.arabic_text }}</p></article>{% empty %}<div class="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center"><p class="font-semibold">No saved verses yet.</p><a href="{% url 'surah_list' %}" class="mt-3 inline-block text-sm font-bold text-emerald-800">Explore the Quran →</a></div>{% endfor %}</div>
+<div class="mb-7"><p class="text-xs font-bold uppercase tracking-[.2em] text-emerald-800">Your collection</p><h1 class="mt-2 text-3xl font-bold">My bookmarks</h1><p class="mt-2 text-sm text-stone-500">Saved privately in this browser. No account required.</p></div>
+<div id="local-bookmarks" class="space-y-4">
+{% for ayah in saved %}
+<article data-saved-ayah="{{ ayah.id }}" class="rounded-2xl border border-stone-200 bg-white p-5 sm:p-7">
+<div class="flex items-center justify-between"><a class="text-xs font-bold text-emerald-800" href="{% url 'reader' ayah.surah.number %}#ayah-{{ ayah.id }}">{{ ayah.surah.name_english }} · {{ ayah.surah.number }}:{{ ayah.verse_number }}</a><button type="button" class="remove-local-bookmark text-xs font-semibold text-rose-700" data-ayah-id="{{ ayah.id }}">Remove</button></div>
+<p class="quran-arabic mt-5 text-right text-3xl leading-relaxed" dir="rtl">{{ ayah.arabic_text }}</p>
+{% for translation in ayah.translations.all %}{% if language and translation.edition.language_id == language.id %}<p class="mt-4 border-t border-stone-100 pt-4 text-sm leading-7 text-slate-700">{{ translation.text }}</p>{% endif %}{% endfor %}
+</article>
+{% endfor %}
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(function () {
+ const key="alQuranBookmarks", box=document.getElementById("local-bookmarks");
+ function read(){try{return JSON.parse(localStorage.getItem(key)||"[]");}catch(e){return [];}}
+ function empty(){box.innerHTML='<div class="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center"><p class="font-semibold">No saved verses yet.</p><a href="{% url 'surah_list' %}" class="mt-3 inline-block text-sm font-bold text-emerald-800">Explore the Quran</a></div>';}
+ function load(){
+  const ids=read().map(function(item){return item.id;}).filter(Number.isInteger);
+  if(!ids.length){empty();return;}
+  fetch("?ids="+encodeURIComponent(ids.join(","))).then(function(res){return res.text();}).then(function(html){
+   const doc=new DOMParser().parseFromString(html,"text/html"), cards=doc.querySelectorAll("[data-saved-ayah]");
+   box.innerHTML=""; cards.forEach(function(card){box.appendChild(card);});
+   if(!cards.length){empty();return;}
+   box.querySelectorAll(".remove-local-bookmark").forEach(function(button){
+    button.addEventListener("click",function(){
+     const id=Number(button.dataset.ayahId);
+     localStorage.setItem(key,JSON.stringify(read().filter(function(item){return item.id!==id;})));
+     button.closest("[data-saved-ayah]").remove(); if(!read().length) empty();
+    });
+   });
+  });
+ }
+ load();
+})();
+</script>
 {% endblock %}
