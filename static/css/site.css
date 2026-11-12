@@ -12,3 +12,9 @@ form ul.errorlist { color:#be123c; font-size:.8rem; margin:.25rem 0; }
 .player-play:hover { background:#065f46; }
 .quran-player { padding-bottom: env(safe-area-inset-bottom); }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto !important; transition:none !important; } }
+
+.player-control { display:inline-grid !important; flex:0 0 40px; width:40px; height:40px; min-width:40px; min-height:40px; padding:0; border:0; cursor:pointer; place-items:center; color:#064e3b; background:#f5f5f4; visibility:visible; opacity:1; }
+.player-control svg { display:block; width:21px; height:21px; }
+.player-play { color:#fff; background:#064e3b; }
+.local-bookmark { display:inline-flex; align-items:center; gap:5px; }
+.local-bookmark svg { display:inline-block; width:18px; height:18px; }
